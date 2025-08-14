@@ -71,7 +71,6 @@ button:hover { background: #0056b3; }
 
     <button type="button" onclick="addRow()">+ Add Item</button>
     <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
-
     <button type="submit">Save Invoice</button>
 </form>
 
@@ -81,13 +80,18 @@ let itemsList = [];
 async function loadRateList() {
     try {
         const response = await fetch("ratelist.json"); // same folder
-        const data = await response.json();
-        // Map JSON to easier format
-        itemsList = data.map(item => ({
+        const json = await response.json();
+        
+        // Handle if data is wrapped inside { "data": [...] }
+        const arr = Array.isArray(json) ? json : (json.data || []);
+        
+        // Map into simpler format for dropdown handling
+        itemsList = arr.map(item => ({
             name: item["Item Details"],
             rate: item["Price/Unit"],
             unit: item["Unit"]
         }));
+
         populateItemDropdown(document.querySelector(".itemName"));
     } catch (err) {
         console.error("Error loading rate list:", err);
@@ -158,6 +162,7 @@ document.getElementById("invoiceForm").addEventListener("submit", e => {
     alert("Invoice Saved!");
 });
 
+// Load the JSON rate list at page start
 loadRateList();
 </script>
 
