@@ -22,7 +22,7 @@ button:hover { background: #0056b3; }
     td { border: none; border-bottom: 1px solid #ddd; text-align: right; padding-left: 50%; position: relative; }
     td::before { position: absolute; left: 10px; width: 45%; white-space: nowrap; text-align: left; font-weight: bold; }
     td:nth-of-type(1)::before { content: "Item Name"; }
-    td:nth-of-type(2)::before { content: "PCs"; }
+    td:nth-of-type(2)::before { content: "Qty"; }
     td:nth-of-type(3)::before { content: "Rate"; }
     td:nth-of-type(4)::before { content: "Total"; }
     td:nth-of-type(5)::before { content: "Action"; }
@@ -32,6 +32,7 @@ button:hover { background: #0056b3; }
 <body>
 
 <h1>Invoice Entry</h1>
+
 <form id="invoiceForm">
     <label>Invoice No:</label>
     <input type="text" id="invoiceNo" required>
@@ -47,7 +48,7 @@ button:hover { background: #0056b3; }
         <thead>
             <tr>
                 <th>Item Name</th>
-                <th>PCs</th>
+                <th>Qty</th>
                 <th>Rate</th>
                 <th>Total</th>
                 <th>Action</th>
@@ -70,6 +71,7 @@ button:hover { background: #0056b3; }
 
     <button type="button" onclick="addRow()">+ Add Item</button>
     <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
+
     <button type="submit">Save Invoice</button>
 </form>
 
@@ -78,12 +80,18 @@ let itemsList = [];
 
 async function loadRateList() {
     try {
-        const response = await fetch("ratelist.json"); // Same repo & folder
-        itemsList = await response.json();
+        const response = await fetch("ratelist.json"); // same folder
+        const data = await response.json();
+        // Map JSON to easier format
+        itemsList = data.map(item => ({
+            name: item["Item Details"],
+            rate: item["Price/Unit"],
+            unit: item["Unit"]
+        }));
         populateItemDropdown(document.querySelector(".itemName"));
     } catch (err) {
         console.error("Error loading rate list:", err);
-        alert("Failed to load rate list. Make sure ratelist.json is in the repo.");
+        alert("Failed to load rate list.");
     }
 }
 
@@ -91,9 +99,9 @@ function populateItemDropdown(selectElement) {
     selectElement.innerHTML = '<option value="">--Select Item--</option>';
     itemsList.forEach(item => {
         let opt = document.createElement("option");
-        opt.value = item.ItemName;
-        opt.textContent = item.ItemName;
-        opt.dataset.rate = item.Rate;
+        opt.value = item.name;
+        opt.textContent = `${item.name} (${item.unit})`;
+        opt.dataset.rate = item.rate;
         selectElement.appendChild(opt);
     });
 }
