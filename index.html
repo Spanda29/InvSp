@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice Entry (Excel from GitHub)</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Invoice Entry</title>
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; }
 h1 { color: #333; }
@@ -12,7 +12,7 @@ input, select, textarea { padding: 6px; width: 100%; max-width: 400px; margin-to
 table { width: 100%; border-collapse: collapse; margin-top: 15px; }
 th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
 th { background: #f4f4f4; }
-button { padding: 8px 12px; margin-top: 15px; background: #007BFF; color: white; border: none; cursor: pointer; }
+button { padding: 8px 12px; margin-top: 15px; background: #007BFF; color: #fff; border: none; cursor: pointer; }
 button:hover { background: #0056b3; }
 @media screen and (max-width: 768px) {
     body { margin: 10px; }
@@ -20,9 +20,7 @@ button:hover { background: #0056b3; }
     thead tr { display: none; }
     tr { margin-bottom: 15px; background: #fafafa; padding: 10px; border-radius: 5px; }
     td { border: none; border-bottom: 1px solid #ddd; text-align: right; padding-left: 50%; position: relative; }
-    td::before {
-        position: absolute; left: 10px; width: 45%; white-space: nowrap; text-align: left; font-weight: bold;
-    }
+    td::before { position: absolute; left: 10px; width: 45%; white-space: nowrap; text-align: left; font-weight: bold; }
     td:nth-of-type(1)::before { content: "Item Name"; }
     td:nth-of-type(2)::before { content: "PCs"; }
     td:nth-of-type(3)::before { content: "Rate"; }
@@ -34,17 +32,13 @@ button:hover { background: #0056b3; }
 <body>
 
 <h1>Invoice Entry</h1>
-
 <form id="invoiceForm">
     <label>Invoice No:</label>
     <input type="text" id="invoiceNo" required>
-
     <label>Date:</label>
     <input type="date" id="invoiceDate" required>
-
     <label>Party Name:</label>
     <input type="text" id="partyName" placeholder="Enter Party Name" required>
-
     <label>Narration:</label>
     <textarea id="narration"></textarea>
 
@@ -76,39 +70,27 @@ button:hover { background: #0056b3; }
 
     <button type="button" onclick="addRow()">+ Add Item</button>
     <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
-
     <button type="submit">Save Invoice</button>
 </form>
 
-<!-- Load SheetJS to Read Excel -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-let itemsList = []; // Will store Excel data
+let itemsList = [];
 
-// 📌 CHANGE THIS to your actual GitHub "RAW" Excel link
-const excelFileURL = "https://raw.githubusercontent.com/spenda29/InvSp/main/ratelist.xlsx";
-
-async function loadExcelData(url) {
+async function loadRateList() {
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Network response was not ok");
-        const arrayBuffer = await response.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        itemsList = jsonData; // Expect columns {ItemName, Rate}
+        const response = await fetch("ratelist.json"); // Same repo & folder
+        itemsList = await response.json();
         populateItemDropdown(document.querySelector(".itemName"));
-    } catch (error) {
-        console.error("Error loading Excel file:", error);
-        alert("Failed to load rate list. Check your file link or GitHub settings.");
+    } catch (err) {
+        console.error("Error loading rate list:", err);
+        alert("Failed to load rate list. Make sure ratelist.json is in the repo.");
     }
 }
 
 function populateItemDropdown(selectElement) {
     selectElement.innerHTML = '<option value="">--Select Item--</option>';
     itemsList.forEach(item => {
-        const opt = document.createElement("option");
+        let opt = document.createElement("option");
         opt.value = item.ItemName;
         opt.textContent = item.ItemName;
         opt.dataset.rate = item.Rate;
@@ -168,8 +150,7 @@ document.getElementById("invoiceForm").addEventListener("submit", e => {
     alert("Invoice Saved!");
 });
 
-// Load Excel file from GitHub
-loadExcelData(excelFileURL);
+loadRateList();
 </script>
 
 </body>
