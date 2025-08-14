@@ -3,50 +3,42 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Modern Invoice</title>
+<title>Invoice Entry</title>
 <style>
     body {
-        font-family: 'Segoe UI', sans-serif;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #e0f7fa, #fce4ec);
         margin: 0; padding: 0;
-        background: linear-gradient(135deg, #e0f7fa, #e1bee7);
-        min-height: 100vh;
-        animation: fadeInBody 1s ease-in-out;
     }
-    @keyframes fadeInBody { from {opacity:0;} to {opacity:1;} }
     .container {
-        max-width: 1000px;
+        max-width: 1100px;
         margin: auto;
         background: white;
         padding: 20px;
         margin-top: 20px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.2);
         border-radius: 10px;
-        animation: slideIn 0.8s ease-out;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        animation: fadeIn 0.8s ease-out;
     }
-    @keyframes slideIn { from {transform: translateY(30px); opacity:0;} to {transform: translateY(0); opacity:1;} }
+    @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
     h1 { text-align: center; color: #673ab7; }
-    label { font-weight: bold; color:#444; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
     input, textarea {
-        width: 100%; padding: 6px; margin-top: 5px; 
-        box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
+        width: 100%; padding: 8px; margin-top: 5px;
+        border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
     }
-    table {
-        width: 100%; border-collapse: collapse; margin-top: 15px;
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #ddd; padding: 8px; }
-    th {
-        background: #673ab7; color: white;
-    }
+    th { background: #673ab7; color: white; }
     button {
         padding: 8px 14px; border: none; border-radius: 4px; cursor: pointer;
     }
     .btn-primary { background: #4cafef; color: white; }
-    .btn-primary:hover { background: #2196f3; }
     .btn-danger { background: #f44336; color: white; }
-    .btn-danger:hover { background: #d32f2f; }
     .autocomplete-suggestions {
         border: 1px solid #ccc; background: white;
-        position: absolute; max-height: 150px; overflow-y: auto; z-index: 1000;
+        position: absolute; max-height: 150px;
+        overflow-y: auto; z-index: 1000;
         width: calc(100% - 20px);
     }
     .autocomplete-suggestions div {
@@ -98,8 +90,9 @@
 </div>
 
 <script>
-let itemsList = []; // from JSON
-const jsonURL = "ratelist.json"; // same folder
+let itemsList = [];
+const jsonURL = "ratelist.json"; // Must be in same folder on GitHub Pages
+const sheetURL = "https://script.google.com/macros/s/AKfycbxUHzN_urJU39R7G0x9WAVZ5LchScoSeHhHEmouhhCUPj0pQ3V-4KW71g-caNx4soCu/exec"; // Replace with Web App URL
 
 async function loadRateList(){
     const res = await fetch(jsonURL);
@@ -111,37 +104,38 @@ async function loadRateList(){
         unit: it["Unit"]
     }));
 }
+
 function createAutocomplete(input){
     let suggestionBox;
     input.addEventListener("input", function(){
-        closeSuggestions();
-        let val = this.value.toLowerCase();
+        closeSuggest();
+        let val = this.value.trim().toLowerCase();
         if(!val) return;
         suggestionBox = document.createElement("div");
         suggestionBox.classList.add("autocomplete-suggestions");
         this.parentNode.appendChild(suggestionBox);
         itemsList.filter(it => it.name.toLowerCase().includes(val))
         .forEach(it => {
-            const itemDiv = document.createElement("div");
-            itemDiv.textContent = `${it.name} (${it.unit})`;
-            itemDiv.onclick = () => {
+            const div = document.createElement("div");
+            div.textContent = `${it.name} (${it.unit})`;
+            div.onclick = () => {
                 input.value = it.name;
                 input.closest("tr").querySelector(".rate").value = it.rate;
                 updateTotals();
-                closeSuggestions();
+                closeSuggest();
             };
-            suggestionBox.appendChild(itemDiv);
+            suggestionBox.appendChild(div);
         });
     });
     document.addEventListener("click", function(e){
-        if(e.target!==input) closeSuggestions();
+        if(e.target !== input) closeSuggest();
     });
-    function closeSuggestions(){
+    function closeSuggest(){
         if(suggestionBox) suggestionBox.remove();
     }
 }
 
-function addRow(name="",qty=1,rate=0){
+function addRow(name="", qty=1, rate=0){
     const tbody = document.querySelector("#itemsTable tbody");
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -161,11 +155,13 @@ function removeRow(btn){
     btn.closest("tr").remove();
     updateTotals();
 }
+
 function addListeners(row){
     row.querySelectorAll(".pcs, .rate").forEach(inp=>{
         inp.addEventListener("input", updateTotals);
     });
 }
+
 function updateTotals(){
     let grandTotal = 0;
     document.querySelectorAll("#itemsTable tbody tr").forEach(tr=>{
@@ -175,19 +171,51 @@ function updateTotals(){
         tr.querySelector(".lineTotal").textContent = total.toFixed(2);
         grandTotal += total;
     });
-    const discount = parseFloat(document.getElementById("discount").value)||0;
+    const discount = parseFloat(document.getElementById("discount").value) || 0;
     document.getElementById("grandTotal").textContent = (grandTotal - discount).toFixed(2);
 }
+
 document.getElementById("invoiceForm").addEventListener("submit", e=>{
     e.preventDefault();
-    if(confirm("Invoice Saved! Do you want to Print/PDF?")){
-        window.print();
-    }
+    const invoiceData = {
+        invoiceNo: document.getElementById("invoiceNo").value,
+        date: document.getElementById("invoiceDate").value,
+        partyName: document.getElementById("partyName").value,
+        narration: document.getElementById("narration").value,
+        discount: parseFloat(document.getElementById("discount").value) || 0,
+        total: parseFloat(document.getElementById("grandTotal").textContent),
+        items: []
+    };
+    document.querySelectorAll("#itemsTable tbody tr").forEach(row=>{
+        const itemName = row.querySelector(".itemName").value;
+        const pcs = parseFloat(row.querySelector(".pcs").value) || 0;
+        const rate = parseFloat(row.querySelector(".rate").value) || 0;
+        const total = pcs * rate;
+        invoiceData.items.push({ itemName, pcs, rate, total });
+    });
+
+    fetch(sheetURL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoiceData)
+    })
+    .then(res => res.json())
+    .then(result => {
+        if(result.status === "success"){
+            if(confirm("Invoice saved! Do you want to print or download PDF?")){
+                window.print();
+            }
+        } else {
+            alert("Save failed: " + result.message);
+        }
+    })
+    .catch(err => alert("Error: " + err.message));
 });
 
-// Auto invoice number & today's date
+// Auto invoice no & date
 window.addEventListener("DOMContentLoaded", async ()=>{
-    document.getElementById("invoiceNo").value = "INV-" + new Date().getTime();
+    document.getElementById("invoiceNo").value = "INV-" + Date.now();
     document.getElementById("invoiceDate").valueAsDate = new Date();
     await loadRateList();
     addRow();
