@@ -1,170 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Invoice Entry</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Modern Invoice</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-h1 { color: #333; }
-label { display: block; margin-top: 10px; font-weight: bold; }
-input, select, textarea { padding: 6px; width: 100%; max-width: 400px; margin-top: 4px; box-sizing: border-box; }
-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-th { background: #f4f4f4; }
-button { padding: 8px 12px; margin-top: 15px; background: #007BFF; color: #fff; border: none; cursor: pointer; }
-button:hover { background: #0056b3; }
-@media screen and (max-width: 768px) {
-    body { margin: 10px; }
-    table, thead, tbody, th, td, tr { display: block; width: 100%; }
-    thead tr { display: none; }
-    tr { margin-bottom: 15px; background: #fafafa; padding: 10px; border-radius: 5px; }
-    td { border: none; border-bottom: 1px solid #ddd; text-align: right; padding-left: 50%; position: relative; }
-    td::before { position: absolute; left: 10px; width: 45%; white-space: nowrap; text-align: left; font-weight: bold; }
-    td:nth-of-type(1)::before { content: "Item Name"; }
-    td:nth-of-type(2)::before { content: "Qty"; }
-    td:nth-of-type(3)::before { content: "Rate"; }
-    td:nth-of-type(4)::before { content: "Total"; }
-    td:nth-of-type(5)::before { content: "Action"; }
-}
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        margin: 0; padding: 0;
+        background: linear-gradient(135deg, #e0f7fa, #e1bee7);
+        min-height: 100vh;
+        animation: fadeInBody 1s ease-in-out;
+    }
+    @keyframes fadeInBody { from {opacity:0;} to {opacity:1;} }
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 10px;
+        animation: slideIn 0.8s ease-out;
+    }
+    @keyframes slideIn { from {transform: translateY(30px); opacity:0;} to {transform: translateY(0); opacity:1;} }
+    h1 { text-align: center; color: #673ab7; }
+    label { font-weight: bold; color:#444; }
+    input, textarea {
+        width: 100%; padding: 6px; margin-top: 5px; 
+        box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
+    }
+    table {
+        width: 100%; border-collapse: collapse; margin-top: 15px;
+    }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th {
+        background: #673ab7; color: white;
+    }
+    button {
+        padding: 8px 14px; border: none; border-radius: 4px; cursor: pointer;
+    }
+    .btn-primary { background: #4cafef; color: white; }
+    .btn-primary:hover { background: #2196f3; }
+    .btn-danger { background: #f44336; color: white; }
+    .btn-danger:hover { background: #d32f2f; }
+    .autocomplete-suggestions {
+        border: 1px solid #ccc; background: white;
+        position: absolute; max-height: 150px; overflow-y: auto; z-index: 1000;
+        width: calc(100% - 20px);
+    }
+    .autocomplete-suggestions div {
+        padding: 5px; cursor: pointer;
+    }
+    .autocomplete-suggestions div:hover { background: #f1f1f1; }
+    @media (max-width:768px){
+        table, thead, tbody, th, td, tr { display:block; }
+        thead tr { display:none; }
+        td { position:relative; padding-left:50%; }
+        td::before { position:absolute; left:10px; font-weight:bold; }
+        td:nth-of-type(1)::before { content:"Item Name"; }
+        td:nth-of-type(2)::before { content:"Qty"; }
+        td:nth-of-type(3)::before { content:"Rate"; }
+        td:nth-of-type(4)::before { content:"Total"; }
+        td:nth-of-type(5)::before { content:"Action"; }
+    }
 </style>
 </head>
 <body>
+<div class="container">
+    <h1>Invoice</h1>
+    <form id="invoiceForm">
+        <label>Invoice No:</label>
+        <input type="text" id="invoiceNo" required>
+        <label>Date:</label>
+        <input type="date" id="invoiceDate" required>
+        <label>Party Name:</label>
+        <input type="text" id="partyName" required>
+        <label>Narration:</label>
+        <textarea id="narration"></textarea>
 
-<h1>Invoice Entry</h1>
-
-<form id="invoiceForm">
-    <label>Invoice No:</label>
-    <input type="text" id="invoiceNo" required>
-    <label>Date:</label>
-    <input type="date" id="invoiceDate" required>
-    <label>Party Name:</label>
-    <input type="text" id="partyName" placeholder="Enter Party Name" required>
-    <label>Narration:</label>
-    <textarea id="narration"></textarea>
-
-    <h3>Items</h3>
-    <table id="itemsTable">
-        <thead>
-            <tr>
-                <th>Item Name</th>
-                <th>Qty</th>
-                <th>Rate</th>
-                <th>Total</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>
-                    <select class="itemName" onchange="updateRate(this)" required>
-                        <option value="">--Select Item--</option>
-                    </select>
-                </td>
-                <td><input type="number" class="pcs" min="1" value="1"></td>
-                <td><input type="number" class="rate" min="0" step="0.01" value="0.00"></td>
-                <td class="lineTotal">0.00</td>
-                <td><button type="button" onclick="removeRow(this)">Remove</button></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <button type="button" onclick="addRow()">+ Add Item</button>
-    <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
-    <button type="submit">Save Invoice</button>
-</form>
+        <h3>Items</h3>
+        <table id="itemsTable">
+            <thead>
+                <tr>
+                    <th>Item Name</th><th>Qty</th><th>Rate</th><th>Total</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <button type="button" class="btn-primary" onclick="addRow()">+ Add Item</button>
+        <br><br>
+        <label>Discount:</label>
+        <input type="number" id="discount" value="0" step="0.01" oninput="updateTotals()"/>
+        <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
+        <button type="submit" class="btn-primary">Save Invoice</button>
+    </form>
+</div>
 
 <script>
-let itemsList = [];
+let itemsList = []; // from JSON
+const jsonURL = "ratelist.json"; // same folder
 
-async function loadRateList() {
-    try {
-        const response = await fetch("ratelist.json"); // same folder
-        const json = await response.json();
-        
-        // Handle if data is wrapped inside { "data": [...] }
-        const arr = Array.isArray(json) ? json : (json.data || []);
-        
-        // Map into simpler format for dropdown handling
-        itemsList = arr.map(item => ({
-            name: item["Item Details"],
-            rate: item["Price/Unit"],
-            unit: item["Unit"]
-        }));
-
-        populateItemDropdown(document.querySelector(".itemName"));
-    } catch (err) {
-        console.error("Error loading rate list:", err);
-        alert("Failed to load rate list.");
+async function loadRateList(){
+    const res = await fetch(jsonURL);
+    const json = await res.json();
+    const arr = Array.isArray(json) ? json : (json.data || []);
+    itemsList = arr.map(it => ({
+        name: it["Item Details"],
+        rate: it["Price/Unit"],
+        unit: it["Unit"]
+    }));
+}
+function createAutocomplete(input){
+    let suggestionBox;
+    input.addEventListener("input", function(){
+        closeSuggestions();
+        let val = this.value.toLowerCase();
+        if(!val) return;
+        suggestionBox = document.createElement("div");
+        suggestionBox.classList.add("autocomplete-suggestions");
+        this.parentNode.appendChild(suggestionBox);
+        itemsList.filter(it => it.name.toLowerCase().includes(val))
+        .forEach(it => {
+            const itemDiv = document.createElement("div");
+            itemDiv.textContent = `${it.name} (${it.unit})`;
+            itemDiv.onclick = () => {
+                input.value = it.name;
+                input.closest("tr").querySelector(".rate").value = it.rate;
+                updateTotals();
+                closeSuggestions();
+            };
+            suggestionBox.appendChild(itemDiv);
+        });
+    });
+    document.addEventListener("click", function(e){
+        if(e.target!==input) closeSuggestions();
+    });
+    function closeSuggestions(){
+        if(suggestionBox) suggestionBox.remove();
     }
 }
 
-function populateItemDropdown(selectElement) {
-    selectElement.innerHTML = '<option value="">--Select Item--</option>';
-    itemsList.forEach(item => {
-        let opt = document.createElement("option");
-        opt.value = item.name;
-        opt.textContent = `${item.name} (${item.unit})`;
-        opt.dataset.rate = item.rate;
-        selectElement.appendChild(opt);
-    });
-}
-
-function updateRate(selectElement) {
-    const rateField = selectElement.closest("tr").querySelector(".rate");
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    rateField.value = selectedOption.dataset.rate || 0;
-    updateTotals();
-}
-
-function updateTotals() {
-    let grandTotal = 0;
-    document.querySelectorAll("#itemsTable tbody tr").forEach(row => {
-        const pcs = parseFloat(row.querySelector(".pcs").value) || 0;
-        const rate = parseFloat(row.querySelector(".rate").value) || 0;
-        const total = pcs * rate;
-        row.querySelector(".lineTotal").textContent = total.toFixed(2);
-        grandTotal += total;
-    });
-    document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
-}
-
-function addRow() {
+function addRow(name="",qty=1,rate=0){
     const tbody = document.querySelector("#itemsTable tbody");
     const tr = document.createElement("tr");
     tr.innerHTML = `
-        <td><select class="itemName" onchange="updateRate(this)" required></select></td>
-        <td><input type="number" class="pcs" min="1" value="1"></td>
-        <td><input type="number" class="rate" min="0" step="0.01" value="0.00"></td>
+        <td><input type="text" class="itemName" value="${name}"></td>
+        <td><input type="number" class="pcs" min="1" value="${qty}"></td>
+        <td><input type="number" class="rate" min="0" step="0.01" value="${rate}"></td>
         <td class="lineTotal">0.00</td>
-        <td><button type="button" onclick="removeRow(this)">Remove</button></td>
+        <td><button type="button" class="btn-danger" onclick="removeRow(this)">Remove</button></td>
     `;
     tbody.appendChild(tr);
-    populateItemDropdown(tr.querySelector(".itemName"));
     addListeners(tr);
-}
-
-function removeRow(btn) {
-    btn.closest("tr").remove();
+    createAutocomplete(tr.querySelector(".itemName"));
     updateTotals();
 }
 
-function addListeners(row) {
-    row.querySelectorAll(".pcs, .rate").forEach(input => {
-        input.addEventListener("input", updateTotals);
+function removeRow(btn){
+    btn.closest("tr").remove();
+    updateTotals();
+}
+function addListeners(row){
+    row.querySelectorAll(".pcs, .rate").forEach(inp=>{
+        inp.addEventListener("input", updateTotals);
     });
 }
-
-document.querySelectorAll("#itemsTable tbody tr").forEach(addListeners);
-
-document.getElementById("invoiceForm").addEventListener("submit", e => {
+function updateTotals(){
+    let grandTotal = 0;
+    document.querySelectorAll("#itemsTable tbody tr").forEach(tr=>{
+        const pcs = parseFloat(tr.querySelector(".pcs").value) || 0;
+        const rate = parseFloat(tr.querySelector(".rate").value) || 0;
+        const total = pcs * rate;
+        tr.querySelector(".lineTotal").textContent = total.toFixed(2);
+        grandTotal += total;
+    });
+    const discount = parseFloat(document.getElementById("discount").value)||0;
+    document.getElementById("grandTotal").textContent = (grandTotal - discount).toFixed(2);
+}
+document.getElementById("invoiceForm").addEventListener("submit", e=>{
     e.preventDefault();
-    alert("Invoice Saved!");
+    if(confirm("Invoice Saved! Do you want to Print/PDF?")){
+        window.print();
+    }
 });
 
-// Load the JSON rate list at page start
-loadRateList();
+// Auto invoice number & today's date
+window.addEventListener("DOMContentLoaded", async ()=>{
+    document.getElementById("invoiceNo").value = "INV-" + new Date().getTime();
+    document.getElementById("invoiceDate").valueAsDate = new Date();
+    await loadRateList();
+    addRow();
+});
 </script>
-
 </body>
 </html>
